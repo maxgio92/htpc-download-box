@@ -41,21 +41,21 @@ services:
       - TZ=${TZ} # timezone, defined in .env
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ${ROOT}/downloads/torrent-blackhole:/downloads # place where to put .torrent files for manual download
+      - ${ROOT}/downloads/torrents-blackhole:/downloads # place where to put .torrent files for manual download
       - ${ROOT}/config/jackett:/config # config files
 
-  nzbget:
-    container_name: nzbget
-    image: linuxserver/nzbget:latest
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      - PUID=${PUID} # default user id, defined in .env
-      - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env
-    volumes:
-      - ${ROOT}/downloads:/downloads # download folder
-      - ${ROOT}/config/nzbget:/config # config files
+  #nzbget:
+  #  container_name: nzbget
+  #  image: linuxserver/nzbget:latest
+  #  restart: unless-stopped
+  #  network_mode: host
+  #  environment:
+  #    - PUID=${PUID} # default user id, defined in .env
+  #    - PGID=${PGID} # default group id, defined in .env
+  #    - TZ=${TZ} # timezone, defined in .env
+  #  volumes:
+  #    - ${ROOT}/downloads:/downloads # download folder
+  #    - ${ROOT}/config/nzbget:/config # config files
 
   sonarr:
     container_name: sonarr
@@ -69,26 +69,26 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${ROOT}/config/sonarr:/config # config files
-      - ${ROOT}/complete/tv:/tv # tv shows folder
+      - ${ROOT}/data/tv:/tv # tv shows folder
       - ${ROOT}/downloads:/downloads # download folder
 
-  radarr:
-    container_name: radarr
-    image: linuxserver/radarr:latest
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      - PUID=${PUID} # default user id, defined in .env
-      - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - ${ROOT}/config/radarr:/config # config files
-      - ${ROOT}/complete/movies:/movies # movies folder
-      - ${ROOT}/downloads:/downloads # download folder
+  #radarr:
+  #  container_name: radarr
+  #  image: linuxserver/radarr:latest
+  #  restart: unless-stopped
+  #  network_mode: host
+  #  environment:
+  #    - PUID=${PUID} # default user id, defined in .env
+  #    - PGID=${PGID} # default group id, defined in .env
+  #    - TZ=${TZ} # timezone, defined in .env
+  #  volumes:
+  #    - /etc/localtime:/etc/localtime:ro
+  #    - ${ROOT}/config/radarr:/config # config files
+  #    - ${ROOT}/data/movies:/movies # movies folder
+  #    - ${ROOT}/downloads:/downloads # download folder
 
-  plex-server:
-    container_name: plex-server
+  plex:
+    container_name: plex
     image: plexinc/pms-docker:latest
     restart: unless-stopped
     environment:
@@ -97,19 +97,56 @@ services:
     volumes:
       - ${ROOT}/config/plex/db:/config # plex database
       - ${ROOT}/config/plex/transcode:/transcode # temp transcoded files
-      - ${ROOT}/complete:/data # media library
+      - ${ROOT}/data:/data # media library
 
-  bazarr:
-    container_name: bazarr
-    image: linuxserver/bazarr
-    restart: unless-stopped
-    network_mode: host
+  #bazarr:
+  #  container_name: bazarr
+  #  image: linuxserver/bazarr
+  #  restart: unless-stopped
+  #  network_mode: host
+  #  environment:
+  #    - PUID=${PUID} # default user id, defined in .env
+  #    - PGID=${PGID} # default group id, defined in .env
+  #    - TZ=${TZ} # timezone, defined in .env
+  #    - UMASK_SET=022 #optional
+  #  volumes:
+  #    - ${ROOT}/config/bazarr:/config # config files
+  #    - ${ROOT}/data/movies:/movies # movies folder
+  #    - ${ROOT}/data/tv:/tv # tv shows folder
+
+  syncthing:
+    image: lscr.io/linuxserver/syncthing:latest
+    container_name: syncthing
+    hostname: syncthing #optional
     environment:
-      - PUID=${PUID} # default user id, defined in .env
-      - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env
-      - UMASK_SET=022 #optional
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
     volumes:
-      - ${ROOT}/config/bazarr:/config # config files
-      - ${ROOT}/complete/movies:/movies # movies folder
-      - ${ROOT}/complete/tv:/tv # tv shows folder
+      - ${ROOT}/config/syncthing/config:/config
+      - ${ROOT}/data/photos:/data/photos
+      - ${ROOT}/data/documents:/data/documents
+    ports:
+      - 8384:8384
+      - 22000:22000/tcp
+      - 22000:22000/udp
+      - 21027:21027/udp
+    restart: unless-stopped
+
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale
+    hostname: tailscale
+    environment:
+      - TS_AUTHKEY=${TS_KEY}
+      #- TS_EXTRA_ARGS="--advertise-tags=tag:container"
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    volumes:
+      - ${PWD}/tailscale/state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    network_mode: host
+    cap_add:
+      - net_admin
+    restart: unless-stopped
