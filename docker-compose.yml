@@ -1,7 +1,6 @@
-version: "3.4"
+name: media
 services:
   vpn:
-    container_name: vpn
     image: dperson/openvpn-client:latest
     cap_add:
       - net_admin # required to modify network interfaces
@@ -18,7 +17,6 @@ services:
     command: '-f "" -r 192.168.1.0/24' # enable firewall and route local network traffic
 
   deluge:
-    container_name: deluge
     image: linuxserver/deluge:latest
     restart: unless-stopped
     network_mode: service:vpn # run on the vpn network
@@ -31,7 +29,6 @@ services:
       - ${ROOT}/config/deluge:/config # config files
 
   jackett:
-    container_name: jackett
     image: linuxserver/jackett:latest
     restart: unless-stopped
     network_mode: host
@@ -41,11 +38,10 @@ services:
       - TZ=${TZ} # timezone, defined in .env
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ${ROOT}/downloads/torrents-blackhole:/downloads # place where to put .torrent files for manual download
+      - ${ROOT}/downloads/torrent-blackhole:/downloads # place where to put .torrent files for manual download
       - ${ROOT}/config/jackett:/config # config files
 
   #nzbget:
-  #  container_name: nzbget
   #  image: linuxserver/nzbget:latest
   #  restart: unless-stopped
   #  network_mode: host
@@ -58,7 +54,6 @@ services:
   #    - ${ROOT}/config/nzbget:/config # config files
 
   sonarr:
-    container_name: sonarr
     image: linuxserver/sonarr:latest
     restart: unless-stopped
     network_mode: host
@@ -69,11 +64,10 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${ROOT}/config/sonarr:/config # config files
-      - ${ROOT}/data/tv:/tv # tv shows folder
+      - ${ROOT}/complete/tv:/tv # tv shows folder
       - ${ROOT}/downloads:/downloads # download folder
 
   #radarr:
-  #  container_name: radarr
   #  image: linuxserver/radarr:latest
   #  restart: unless-stopped
   #  network_mode: host
@@ -84,11 +78,10 @@ services:
   #  volumes:
   #    - /etc/localtime:/etc/localtime:ro
   #    - ${ROOT}/config/radarr:/config # config files
-  #    - ${ROOT}/data/movies:/movies # movies folder
+  #    - ${ROOT}/complete/movies:/movies # movies folder
   #    - ${ROOT}/downloads:/downloads # download folder
 
-  plex:
-    container_name: plex
+  plex-server:
     image: plexinc/pms-docker:latest
     restart: unless-stopped
     environment:
@@ -97,10 +90,9 @@ services:
     volumes:
       - ${ROOT}/config/plex/db:/config # plex database
       - ${ROOT}/config/plex/transcode:/transcode # temp transcoded files
-      - ${ROOT}/data:/data # media library
+      - ${ROOT}/complete:/data # media library
 
   #bazarr:
-  #  container_name: bazarr
   #  image: linuxserver/bazarr
   #  restart: unless-stopped
   #  network_mode: host
@@ -111,12 +103,11 @@ services:
   #    - UMASK_SET=022 #optional
   #  volumes:
   #    - ${ROOT}/config/bazarr:/config # config files
-  #    - ${ROOT}/data/movies:/movies # movies folder
-  #    - ${ROOT}/data/tv:/tv # tv shows folder
+  #    - ${ROOT}/complete/movies:/movies # movies folder
+  #    - ${ROOT}/complete/tv:/tv # tv shows folder
 
   syncthing:
     image: lscr.io/linuxserver/syncthing:latest
-    container_name: syncthing
     hostname: syncthing #optional
     environment:
       - PUID=1000
@@ -124,8 +115,8 @@ services:
       - TZ=Etc/UTC
     volumes:
       - ${ROOT}/config/syncthing/config:/config
-      - ${ROOT}/data/photos:/data/photos
-      - ${ROOT}/data/documents:/data/documents
+      - ${ROOT}/complete/photos:/data/photos
+      - ${ROOT}/complete/documents:/data/documents
     ports:
       - 8384:8384
       - 22000:22000/tcp
@@ -135,10 +126,9 @@ services:
 
   tailscale:
     image: tailscale/tailscale:latest
-    container_name: tailscale
     hostname: tailscale
     environment:
-      - TS_AUTHKEY=${TS_KEY}
+      - TS_AUTHKEY=tskey-auth-${TS_KEY}
       #- TS_EXTRA_ARGS="--advertise-tags=tag:container"
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
